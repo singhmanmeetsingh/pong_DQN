@@ -1,4 +1,4 @@
-For logs 
+**For logs **
 $ tensorboard --logdir=logs/dqn_pong
 
 # Train with default settings
