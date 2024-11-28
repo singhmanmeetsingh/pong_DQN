@@ -6,14 +6,7 @@ import tensorflow as tf
 import ale_py
 
 def evaluate_model(model_path, num_episodes=10, render=True):
-    """
-    Evaluate a trained model and log metrics to TensorBoard.
-    
-    Args:
-        model_path: Path to the saved model file (.h5)
-        num_episodes: Number of episodes to evaluate
-        render: Whether to render the environment
-    """
+   
     # Create environment and agent
     env = gym.make('PongDeterministic-v4', 
                   render_mode='human' if render else None)

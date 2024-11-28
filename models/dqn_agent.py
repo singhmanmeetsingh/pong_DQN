@@ -15,7 +15,8 @@ class DQNAgent:
         self.epsilon = 1.0
         self.epsilon_min = 0.05
         self.epsilon_decay = 0.995
-        self.batch_size = 8
+        # self.batch_size = 8    unccomment it for the testing for 8
+        self.batch_size = 16 
         self.update_target_every = 10
         self.learning_rate = 0.00025
         
@@ -116,15 +117,60 @@ class DQNAgent:
         filename = f"{name_prefix}_{timestamp}"
         path = os.path.join(self.save_dir, filename)
         
+        # Save model weights
         self.main_network.save(f"{path}.h5")
+        
+        # Save training state
         metrics = {
             'epsilon': self.epsilon,
-            'episode': self.episode_count
+            'episode': self.episode_count,
+            'memory_size': len(self.memory)
         }
         np.save(f"{path}_metrics.npy", metrics)
         print(f"\nModel saved: {path}.h5")
+        print(f"Current epsilon: {self.epsilon:.3f}")
+        print(f"Episode saved: {self.episode_count}")
+        print(f"Memory size: {len(self.memory)}")
     
     def load_model(self, filepath):
         print(f"Loading model from: {filepath}")
+        
+        # Load model weights
         self.main_network.load_weights(filepath)
         self.target_network.set_weights(self.main_network.get_weights())
+        
+        # Try to load training state
+        try:
+            # Look for state file with same name but _metrics.npy instead of .h5
+            state_path = filepath.replace('.h5', '_metrics.npy')
+            if os.path.exists(state_path):
+                state = np.load(state_path, allow_pickle=True).item()
+                self.epsilon = state.get('epsilon', self.epsilon)
+                self.episode_count = state.get('episode', 0)
+                print(f"Restored epsilon: {self.epsilon:.3f}")
+                print(f"Restored episode count: {self.episode_count}")
+            else:
+                print("No state file found, using default values")
+                print(f"Using epsilon: {self.epsilon}")
+                print(f"Using episode count: {self.episode_count}")
+        except Exception as e:
+            print(f"Could not load training state: {e}")
+            print("Using default values")
+
+    def get_training_state(self):
+        """Get current training state"""
+        return {
+            'epsilon': self.epsilon,
+            'episode_count': self.episode_count,
+            'memory_size': len(self.memory),
+            'learning_rate': self.learning_rate,
+            'gamma': self.gamma,
+            'batch_size': self.batch_size
+        }
+
+    def reset_training_metrics(self):
+        """Reset training metrics for new session"""
+        current_time = datetime.now().strftime('%Y%m%d-%H%M%S')
+        self.log_dir = f'logs/dqn_pong/{current_time}'
+        self.summary_writer = tf.summary.create_file_writer(self.log_dir)
+        print(f"Reset TensorBoard logs to: {self.log_dir}")
